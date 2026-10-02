@@ -552,7 +552,8 @@
       } catch (err) {
         document.getElementById('app').innerHTML = `
           <div class="card-error">THIS CARD LINK IS BROKEN OR GOT CUT OFF.<br><br>
-          ASK THE SENDER FOR THE DOWNLOADED .HTML VERSION,<br>OR <a href="${HOME}">MAKE YOUR OWN</a>.</div>`;
+          ASK THE SENDER TO SEND YOU THE DOWNLOADED CARD,<br>OR <a href="${HOME}">MAKE YOUR OWN</a>.</div>`;
+        document.title = 'BIRTHDAY ROAST';
         return;
       }
     }

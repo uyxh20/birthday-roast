@@ -57,7 +57,7 @@ h1 {
 /* ---------- layout ---------- */
 .maker {
   display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 28px;
-  max-width: 1160px; margin: 28px auto; padding: 0 16px;
+  max-width: 1160px; margin: 28px auto 48px; padding: 0 16px;
 }
 .form { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .side { position: sticky; top: 16px; align-self: start; display: flex; flex-direction: column; gap: 14px; }
@@ -146,13 +146,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
   font-size: 13px; padding: 16px;
 }
 .btn-main:active { transform: translateY(2px); }
-.btn-sub { background: var(--dark); color: var(--yellow); border: 3px solid var(--yellow); font-size: 9px; padding: 12px 8px; }
+.btn-sub {
+  background: var(--dark); color: var(--yellow); border: 3px solid var(--yellow); font-size: 9px; line-height: 1.7; padding: 10px 8px;
+  display: flex; align-items: center; justify-content: center;
+}
 .btn-ghost { background: none; border: 2px solid var(--panel-border); color: var(--dim); font-size: 8px; padding: 12px; align-self: flex-start; }
-.linkinfo { margin: 0; font-size: 18px; color: var(--dim); min-height: 1.3em; }
-.linkinfo.warn { color: var(--yellow); }
-.linkinfo.ok { color: var(--green); }
+.linkinfo { margin: 0; font-size: 18px; color: var(--yellow); }
+.linkinfo:empty { display: none; }
 
-.foot { text-align: center; color: var(--dim); padding: 20px 16px 48px; font-size: 19px; }
 
 /* ---------- small screens ---------- */
 @media (max-width: 900px) {
@@ -165,7 +166,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
     padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 3px solid var(--panel-border);
   }
   .actions .btn-main { padding: 12px; font-size: 11px; }
-  .linkinfo { font-size: 16px; min-height: 0; }
+  .linkinfo { font-size: 16px; }
   body { padding-bottom: 190px; }
 }
 @media (max-width: 520px) {

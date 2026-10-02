@@ -236,15 +236,10 @@
     link = new URL('card.html', location.href).href + '#' + code;
     linkVersion = v;
     $('open').href = link;
-    const info = $('linkinfo');
-    const n = link.length.toLocaleString();
-    if (link.length > 2000) {
-      info.className = 'linkinfo warn';
-      info.textContent = `Link is ${n} characters. Some apps cut long links, so the download is the safer way to send it.`;
-    } else {
-      info.className = 'linkinfo ok';
-      info.textContent = `Link is ${n} characters. Good to send anywhere.`;
-    }
+    // Only speak up when it matters: some chat apps cut very long links (big photo + many edits).
+    $('linkinfo').textContent = link.length > 2000
+      ? "Big card! If the link won't open for them, send them the downloaded card instead."
+      : '';
   }
 
   // Safari only allows clipboard writes during the tap itself, so copy the ready-made link
@@ -383,7 +378,7 @@
     });
 
     $('reset').addEventListener('click', () => {
-      if (!window.confirm('Start over from the Mochi demo? Your current card will be lost.')) return;
+      if (!window.confirm('Start over? Everything you changed will be cleared.')) return;
       cfg = fresh();
       customPhoto = null;
       renderAvatars();
@@ -404,7 +399,7 @@
       $('preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     $('download').addEventListener('click', () => download().catch(() => {
-      window.alert('Download needs the page to be served over http(s), e.g. GitHub Pages or a local server.');
+      window.alert("Sorry, the download didn't work. Try again, or copy the link instead.");
     }));
     $('preview').addEventListener('load', sendPreview);
   }

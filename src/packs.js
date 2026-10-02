@@ -39,7 +39,7 @@
   const dating = {
     id: 'dating',
     label: 'Dating chaos',
-    blurb: 'The original. Compatibility tests for their dates, a toxicity quiz, excuses for date crimes, drinks for date vibes. For friends who will laugh, not your mum.',
+    blurb: 'Compatibility tests for their dates, a toxicity quiz, excuses for date crimes, drinks for date vibes. For friends who will laugh, not your mum.',
     title: {
       badge: `⚠${NB} CAUTION ${NB}⚠`,
       headline: '{SIGN}\nENCLOSED',
@@ -257,7 +257,7 @@
   const life = {
     id: 'life',
     label: 'Life chaos',
-    blurb: 'Same four games, no dating. Friendship diagnostics, a chaos quiz, excuses for everyday crimes, drinks for any occasion. Safe for family and coworkers.',
+    blurb: 'Friendship diagnostics, a chaos quiz, excuses for everyday crimes, drinks for any occasion. Safe for family and coworkers.',
     title: {
       badge: `⚠${NB} CAUTION ${NB}⚠`,
       headline: '{SIGN}\nENCLOSED',
