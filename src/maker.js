@@ -266,7 +266,7 @@
     }
     try {
       await navigator.clipboard.writeText(link);
-      btn.textContent = '✓ COPIED';
+      btn.textContent = 'COPIED!';
     } catch (e) {
       window.prompt('Copy this link:', link);
     }
