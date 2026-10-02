@@ -392,6 +392,17 @@
     });
 
     $('copy').addEventListener('click', copyLink);
+    // On narrow screens the preview sits below the long form, so this button jumps to it
+    // instead of opening another tab.
+    const narrow = window.matchMedia('(max-width: 900px)');
+    const labelOpen = () => { $('open').textContent = narrow.matches ? 'PREVIEW' : 'OPEN CARD'; };
+    labelOpen();
+    narrow.addEventListener('change', labelOpen);
+    $('open').addEventListener('click', e => {
+      if (!narrow.matches) return;
+      e.preventDefault();
+      $('preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     $('download').addEventListener('click', () => download().catch(() => {
       window.alert('Download needs the page to be served over http(s), e.g. GitHub Pages or a local server.');
     }));
