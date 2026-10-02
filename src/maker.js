@@ -249,16 +249,28 @@
 
   // Safari only allows clipboard writes during the tap itself, so copy the ready-made link
   // without awaiting anything first. Re-encode only if an edit landed in the last 300ms.
+  // On phones the main button opens the share sheet (WhatsApp, iMessage...); elsewhere it copies.
+  const canShare = !!navigator.share && window.matchMedia('(pointer: coarse)').matches;
+
   async function copyLink() {
     if (linkVersion !== version) await updateLink();
     const btn = $('copy');
+    const label = btn.textContent;
+    if (canShare) {
+      try {
+        await navigator.share({ title: 'Birthday Roast', text: `Happy birthday ${normalize(cfg).name}! Press start:`, url: link });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return; // they closed the sheet; nothing to do
+      }
+    }
     try {
       await navigator.clipboard.writeText(link);
       btn.textContent = '✓ COPIED';
     } catch (e) {
       window.prompt('Copy this link:', link);
     }
-    setTimeout(() => { btn.textContent = '▶ COPY LINK'; }, 1800);
+    setTimeout(() => { btn.textContent = label; }, 1800);
   }
 
   // Build one self-contained HTML file: inline the CSS and scripts, then inject the config.
@@ -387,6 +399,7 @@
   }
 
   buildStatic();
+  if (canShare) $('copy').textContent = '▶ SEND IT';
   syncForm();
   wire();
   changed();
