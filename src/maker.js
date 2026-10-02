@@ -214,7 +214,9 @@
   // ------------------------------------------------------------ preview + link
 
   let previewTimer, linkTimer;
+  let version = 0, linkVersion = -1; // the link is fresh when it was built from the latest edit
   function changed() {
+    version++;
     saveDraft();
     refreshResolved();
     clearTimeout(previewTimer);
@@ -229,8 +231,10 @@
   }
 
   async function updateLink() {
+    const v = version;
     const code = await window.RoastCodec.encode(normalize(cfg));
     link = new URL('card.html', location.href).href + '#' + code;
+    linkVersion = v;
     $('open').href = link;
     const info = $('linkinfo');
     const n = link.length.toLocaleString();
@@ -243,8 +247,10 @@
     }
   }
 
+  // Safari only allows clipboard writes during the tap itself, so copy the ready-made link
+  // without awaiting anything first. Re-encode only if an edit landed in the last 300ms.
   async function copyLink() {
-    await updateLink();
+    if (linkVersion !== version) await updateLink();
     const btn = $('copy');
     try {
       await navigator.clipboard.writeText(link);
