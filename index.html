@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Birthday Roast · make a retro roast card</title>
+<meta name="description" content="Turn your friend into a retro 8-bit warning label with four mini-games and your inside jokes. No sign-up, no server: the card lives inside the link.">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/maker.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="badge">⚠ CAUTION ⚠</div>
+  <h1>BIRTHDAY<br>ROAST</h1>
+  <p class="tagline">Turn someone you love into a retro 8-bit warning label. Four mini-games, your inside jokes, one link.</p>
+  <p class="tagline dim">No sign-up. No server. The whole card lives inside the link.</p>
+  <ol class="steps"><li>FILL IN</li><li>PREVIEW</li><li>SEND</li></ol>
+</header>
+
+<main class="maker">
+  <form class="form" id="form" autocomplete="off" onsubmit="return false">
+
+    <section class="box">
+      <h2><span>1</span> WHO'S THE BIRTHDAY HUMAN?</h2>
+      <div class="grid2">
+        <label>Name<input data-field="name" maxlength="30" placeholder="Mochi"></label>
+        <label>Age they're turning<input data-field="age" type="number" min="1" max="149" inputmode="numeric"></label>
+      </div>
+      <div class="grid2">
+        <label>Birthday
+          <span class="pair">
+            <select id="bday-month" aria-label="Birthday month"></select>
+            <select id="bday-day" aria-label="Birthday day"></select>
+          </span>
+        </label>
+        <label>Star sign<select data-field="sign" id="sign"></select></label>
+      </div>
+      <div class="field">
+        <div class="label">Pronouns</div>
+        <div class="pills" id="pronouns"></div>
+      </div>
+    </section>
+
+    <section class="box">
+      <h2><span>2</span> PICK THE CHAOS</h2>
+      <div class="packs" id="packs"></div>
+    </section>
+
+    <section class="box">
+      <h2><span>3</span> THE PORTRAIT</h2>
+      <div class="avatars" id="avatars"></div>
+      <input type="file" id="photo-file" accept="image/*" hidden>
+      <p class="note">Your photo never leaves your browser. It's shrunk to a 32×32 pixel sprite and tucked inside the link.</p>
+    </section>
+
+    <section class="box">
+      <h2><span>4</span> INSIDE JOKES</h2>
+      <p class="note">These get woven into the jokes automatically.</p>
+      <div class="grid2">
+        <label>Where they're from<input data-field="origin" maxlength="40" placeholder="OSAKA / LEEDS"></label>
+        <label>Signature drink<input data-field="fuel" maxlength="40" placeholder="iced oat latte"></label>
+      </div>
+      <div class="grid2">
+        <label>Comfort food<input data-field="food" maxlength="40" placeholder="dumplings"></label>
+        <label>Who's it from?<input data-field="from" maxlength="40" placeholder="THE GROUP CHAT"></label>
+      </div>
+    </section>
+
+    <section class="box">
+      <h2><span>5</span> THE WARNING LABEL</h2>
+      <p class="note">The first screen they see. Make it theirs. <code>{NAME}</code>-style tags fill themselves in.</p>
+      <div id="label-fields"></div>
+    </section>
+
+    <section class="box">
+      <h2><span>6</span> GAMES</h2>
+      <div class="checks" id="games"></div>
+    </section>
+
+    <details class="box editor" id="editor">
+      <summary><h2><span>7</span> EDIT EVERY LINE <small id="line-count"></small></h2></summary>
+      <div class="tokens">
+        <p>Tags fill themselves in. Their case sets the output's case: <code>{name}</code> → Mochi as typed, <code>{Name}</code> → Mochi, <code>{NAME}</code> → MOCHI.</p>
+        <p><code>{name} {age} {ageth} {sign} {asign} {symbol} {element} {aelement} {fuel} {food} {origin} {from} {bday} {year}</code></p>
+        <p>Pronouns: <code>{they} {them} {their} {theyre} {is} {has} {was}</code> and <code>{s}</code> for verbs, e.g. <code>{They} know{s}</code> → "He knows" / "They know".</p>
+      </div>
+      <div id="editor-groups"></div>
+    </details>
+
+    <button type="button" class="btn-ghost" id="reset">↺ START OVER FROM THE DEMO</button>
+  </form>
+
+  <aside class="side">
+    <div class="phone">
+      <iframe id="preview" src="card.html" title="Live preview of the card"></iframe>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn-main" id="copy">▶ COPY LINK</button>
+      <div class="row">
+        <a class="btn-sub" id="open" href="card.html" target="_blank" rel="noopener">OPEN ↗</a>
+        <button type="button" class="btn-sub" id="download">⬇ DOWNLOAD</button>
+      </div>
+      <p class="linkinfo" id="linkinfo"></p>
+    </div>
+  </aside>
+</main>
+
+<footer class="foot">
+  <p>Open source on <a href="https://github.com/uyxh20/birthday-roast">GitHub</a>. It started as a one-off birthday gift for one very specific Pisces.</p>
+</footer>
+
+<script src="src/packs.js"></script>
+<script src="src/demo.js"></script>
+<script src="src/codec.js"></script>
+<script src="src/engine.js"></script>
+<script src="src/pixelate.js"></script>
+<script src="src/maker.js"></script>
+</body>
+</html>

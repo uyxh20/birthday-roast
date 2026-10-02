@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚠️ WARNING: BIRTHDAY HUMAN ENCLOSED</title>
+<meta name="description" content="A retro 8-bit birthday roast card. Press start.">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/card.css">
+</head>
+<body>
+<!--
+  The card player. It reads its config from (in order):
+  1. window.CARD_CONFIG, injected into downloaded copies by the maker
+  2. the URL hash, written by the maker's "copy link"
+  3. the demo friend in src/demo.js
+-->
+<div class="stars" id="stars"></div>
+<div id="app"></div>
+<script src="src/packs.js"></script>
+<script src="src/demo.js"></script>
+<script src="src/codec.js"></script>
+<script src="src/engine.js"></script>
+</body>
+</html>

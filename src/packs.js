@@ -1,0 +1,476 @@
+/*
+ * [INPUT]: nothing; plain data
+ * [OUTPUT]: window.ROAST_SIGNS, window.ROAST_PRONOUNS, window.ROAST_PACKS
+ * [POS]: the content layer. engine.js fills the {tokens} in every line; maker.js lists every line for editing
+ * [PROTOCOL]: keep each pack's shape identical (same keys, 4 traits, 5 questions, 6 crimes, 6 vibes)
+ *   because card overrides are stored by path, e.g. "excuse.crimes.2.list.1"
+ *
+ * Tokens available in every line (case of the token sets the case of the output):
+ *   {name} {Name} {NAME}   {age} {ageth}   {sign} {asign} {symbol} {element} {aelement}
+ *   {fuel} {food} {origin} {from} {bday} {year} {tools}
+ *   pronouns: {they} {them} {their} {theyre} {is} {has} {was} {s}
+ *   e.g. "{They} know{s}" -> "He knows" / "They know"
+ */
+(function () {
+  const SIGNS = {
+    aries:       { label: 'Aries',       symbol: '♈', element: 'fire',  start: [3, 21],  emoji: '🐏🔥💥' },
+    taurus:      { label: 'Taurus',      symbol: '♉', element: 'earth', start: [4, 20],  emoji: '🐂🌷🍰' },
+    gemini:      { label: 'Gemini',      symbol: '♊', element: 'air',   start: [5, 21],  emoji: '👯💬🌀' },
+    cancer:      { label: 'Cancer',      symbol: '♋', element: 'water', start: [6, 21],  emoji: '🦀🌊🏠' },
+    leo:         { label: 'Leo',         symbol: '♌', element: 'fire',  start: [7, 23],  emoji: '🦁👑✨' },
+    virgo:       { label: 'Virgo',       symbol: '♍', element: 'earth', start: [8, 23],  emoji: '🌾📋🧼' },
+    libra:       { label: 'Libra',       symbol: '♎', element: 'air',   start: [9, 23],  emoji: '⚖️💅🌸' },
+    scorpio:     { label: 'Scorpio',     symbol: '♏', element: 'water', start: [10, 23], emoji: '🦂🖤🔮' },
+    sagittarius: { label: 'Sagittarius', symbol: '♐', element: 'fire',  start: [11, 22], emoji: '🏹🌍🎒' },
+    capricorn:   { label: 'Capricorn',   symbol: '♑', element: 'earth', start: [12, 22], emoji: '🐐📈🏔️' },
+    aquarius:    { label: 'Aquarius',    symbol: '♒', element: 'air',   start: [1, 20],  emoji: '🏺🛸⚡' },
+    pisces:      { label: 'Pisces',      symbol: '♓', element: 'water', start: [2, 19],  emoji: '🐟🐠🐡' },
+  };
+
+  const PRONOUNS = {
+    he:   { label: 'he / him',     they: 'he',   them: 'him',  their: 'his',   theyre: "he's",    is: 'is',  has: 'has',  was: 'was',  s: 's' },
+    she:  { label: 'she / her',    they: 'she',  them: 'her',  their: 'her',   theyre: "she's",   is: 'is',  has: 'has',  was: 'was',  s: 's' },
+    they: { label: 'they / them',  they: 'they', them: 'them', their: 'their', theyre: "they're", is: 'are', has: 'have', was: 'were', s: '' },
+  };
+
+  const NB = ' ';
+
+  // ---------------------------------------------------------------- DATING CHAOS
+  const dating = {
+    id: 'dating',
+    label: 'Dating chaos',
+    blurb: 'The original. Compatibility tests for their dates, a toxicity quiz, excuses for date crimes, drinks for date vibes. For friends who will laugh, not your mum.',
+    title: {
+      badge: `⚠${NB} CAUTION ${NB}⚠`,
+      headline: '{SIGN}\nENCLOSED',
+      sheetHead: 'PRODUCT DATA SHEET',
+      sheet: [
+        { k: 'SUBJECT',      v: '{NAME} ({AGE} YRS OLD)' },
+        { k: 'ORIGIN',       v: '{ORIGIN}' },
+        { k: 'SUN SIGN',     v: '{SIGN} {SYMBOL} ({THEY} KNOW{S})' },
+        { k: 'THREAT LVL',   v: 'SLEEP DEPRIVED' },
+        { k: 'TOXICITY',     v: 'CANNOT COMPUTE' },
+        { k: 'SAFE TO DATE', v: 'PROBABLY NOT' },
+      ],
+      alerts: [
+        'KEEP AWAY FROM: GROUP CHATS AFTER MIDNIGHT',
+        'MAY CAUSE: SPONTANEOUS {FOOD} CRAVINGS',
+        'SIDE EFFECT: HANGOVER (UNPLANNED)',
+        'NOT RESPONSIBLE FOR: 2AM TEXTS',
+        'NOTE: POWERED BY {FUEL}',
+      ],
+      start: `▶${NB} PRESS START`,
+      footer: `HAPPY {AGETH} {NAME} {SYMBOL} ${NB}•${NB} {SIGN} CHAOS LABS © {YEAR}`,
+    },
+    dash: {
+      hud: 'WORLD {SYMBOL}-1',
+      head: "★ {NAME}'S CHAOS DASHBOARD ★",
+      sub: 'CHOOSE YOUR DESTINY, PLAYER 2',
+      intro: 'CONGRATULATIONS.\nYOU HAVE FOUND {ASIGN}.\n{TOOLS} BETWEEN\nYOU AND TOTAL CHAOS.',
+      footer: "MADE FOR {NAME} ON THE OCCASION OF SURVIVING {AGE} YEARS\nAS {ASIGN} {SYMBOL} IN A WORLD THAT WASN'T READY",
+      from: 'WITH LOVE (AND CONCERN) FROM {FROM}',
+    },
+    compat: {
+      tile: 'DATE\nDIAGNOS-\nTICS',
+      hud: 'COMPAT-O-METER',
+      title: 'DATE DIAGNOSTICS',
+      hint: 'DESCRIBE YOUR DATE.\n{NAME} WILL DIAGNOSE.',
+      diagnose: '⚕ DIAGNOSE',
+      reportHead: '▼ FIELD REPORT ▼',
+      scoreLabel: 'TOXICITY UNITS / 20',
+      cert: 'ISSUED BY: {NAME} CHAOS RESEARCH INSTITUTE {SYMBOL}\nDISCLAIMER: THIS REPORT IS BINDING. PROCEED AT OWN RISK.',
+      reset: '↺ NEW DATE',
+      traits: [
+        { label: 'DIET', opts: [
+          { t: 'VEGAN', score: 4, tag: 'DIETARY FRICTION', verdict: '{Name} will panic and order the most meat-heavy thing on the menu. Then feel guilty. Then bring it up on date 3. The order was the beginning of the end.' },
+          { t: 'VEGETARIAN', score: 2, tag: 'MILD TURBULENCE', verdict: 'Manageable chaos. One shared meal incident is statistically guaranteed. {Name} will eat heroically around the tofu and say nothing.' },
+          { t: 'OMNIVORE', score: 1, tag: 'COMPATIBLE', verdict: 'Compatible degeneracy. Late-night {food} is the love language. You will both order extra. This is actually your strongest asset.' },
+          { t: 'RAW FOOD ONLY', score: 5, tag: 'INCOMPATIBLE', verdict: 'Biological incompatibility. {Name} needs {food} at 1am. You need a dehydrator. This ends at the restaurant reservation stage.' },
+          { t: 'ONLY EATS BEIGE FOOD', score: 3, tag: 'RED FLAG', verdict: 'No textures, no feelings. {Name} requires both. {They} will find this deeply suspicious and not know why.' },
+        ] },
+        { label: 'GOING OUT', opts: [
+          { t: 'EVERY SINGLE NIGHT', score: 1, tag: 'DANGER ZONE', verdict: 'Natural habitat match. You both live here. The issue is you will never go home. There will be incidents.' },
+          { t: 'MIX OF BOTH', score: 2, tag: 'HIGH RISK', verdict: '{Name} can work with this. The stay-in nights will quietly become emotionally significant. Watch yourself.' },
+          { t: 'PREFER STAYING IN', score: 3, tag: '{NAME} WINS', verdict: '{Name} will try to fix you. {They} will succeed twice. Then guilt-invite you out. You will go. You will enjoy it. {They} win{s}.' },
+          { t: 'NEVER LEAVES THE HOUSE', score: 5, tag: 'INCOMPATIBLE', verdict: 'Incompatible ecosystems. {Name} needs the dance floor the way plants need sunlight. You are a houseplant. A beautiful one. Indoors. Medically.' },
+        ] },
+        { label: 'TEXTING STYLE', opts: [
+          { t: 'VOICE NOTES ONLY', score: 3, tag: 'CHAOS TIER: HIGH', verdict: '{Name} will listen to all 14 of them. At 2am. In bed. {They} will not be okay about it. {They} will send 3 back.' },
+          { t: 'ONE WORD REPLIES', score: 4, tag: '{NAME} SPIRALS', verdict: '"k" will be analyzed for 72 hours. A dissertation will be written in {their} notes app. You will never know about it.' },
+          { t: 'ESSAY LENGTH MESSAGES', score: 2, tag: 'RECOGNIZED', verdict: 'Kindred spirit detected. {Name} also sends essays. You will both be way too much for each other. This is correct.' },
+          { t: 'LEAVES ON READ', score: 5, tag: 'DECLARE WAR', verdict: 'This is war. {Name} will not say anything. {Name} will absolutely say something. Via story. Via mutual friend. Via vibe.' },
+          { t: 'DOUBLE / TRIPLE TEXTS', score: 1, tag: 'COMPATIBLE CHAOS', verdict: 'Seen. Understood. Respected. {Name} has been doing this for years. You will flood each other daily. No one will ever complain.' },
+        ] },
+        { label: 'MEME TASTE', opts: [
+          { t: 'ASTROLOGY MEMES', score: 2, tag: 'BONDING HAZARD', verdict: '{Name} speaks this language fluently and will be immediately dangerous. You bonded in the first 8 minutes. Do not look directly at {them}.' },
+          { t: 'DARK HUMOR ONLY', score: 3, tag: 'DELAYED REACTION', verdict: '{Name} will laugh genuinely and then feel something about it 4 hours later. {They} will not explain why.' },
+          { t: 'MOTIVATIONAL QUOTES', score: 4, tag: 'MISALIGNMENT', verdict: '{Name} needs chaos, not affirmations. {They} will be very polite about this. {They} will also never send you a meme first.' },
+          { t: 'CHAOTIC TIKTOK REPOSTS', score: 1, tag: 'COMPATIBLE', verdict: 'Compatible energy. {Name} will send you 6 immediately. Your phone will never return to its previous state. Welcome.' },
+          { t: 'NO MEMES / TEXTING IS SERIOUS', score: 5, tag: 'INCOMPATIBLE', verdict: '{Name} communicates primarily in memes. This is not a preference. It is a language. You do not speak it.' },
+        ] },
+      ],
+      // Score bands are fixed in engine.js: 4-6, 7-10, 11-15, 16-20
+      diagnoses: [
+        { title: 'STABLE CHAOS', prognosis: 'Against all odds, this could work. {Name} will still make it weird eventually but the baseline is surprisingly functional. Proceed with cautious optimism and approximately 3 backup plans.' },
+        { title: 'CLINICALLY UNHINGED', prognosis: 'There is real chemistry here and also real carnage ahead. {Name} is intrigued, which is the most dangerous state for everyone involved. Someone is getting a 2am text within the week.' },
+        { title: 'HIGH TOXICITY DETECTED', prognosis: 'The red flags are technically pink from this angle. {Name} finds this interesting, which is the problem. The situation has a projected shelf life of 6-8 chaotic weeks followed by a legendary story.' },
+        { title: 'DO NOT PROCEED', prognosis: 'Medical recommendation: do not proceed. Emotional recommendation: {Name} will absolutely proceed. {They} will tell you Mercury made {them} do it. The stars are not responsible for this outcome.' },
+      ],
+    },
+    quiz: {
+      tile: 'TOXICITY\nQUIZ',
+      hud: 'TOXICITY-O-METER',
+      title: 'TOXICITY QUIZ',
+      scoreLabel: 'TOXICITY POINTS',
+      again: `↺${NB} PLAY AGAIN`,
+      questions: [
+        { q: "IT'S 2AM. YOU TEXT YOUR EX BECAUSE:", opts: [
+          { t: 'A) YOU GENUINELY MISS THEM', p: 1 },
+          { t: "B) YOUR HOROSCOPE SAID 'RECONNECT WITH OLD ENERGY'", p: 3 },
+          { t: 'C) MERCURY IS IN RETROGRADE. FREE PASS.', p: 4 },
+          { t: 'D) YOU ARE BORED AND VERY POWERFUL', p: 5 },
+        ] },
+        { q: 'YOUR DATE ORDERS THE SAME DRINK. YOU THINK:', opts: [
+          { t: 'A) CUTE! WE HAVE THINGS IN COMMON', p: 1 },
+          { t: 'B) ARE THEY LITERALLY COPYING ME', p: 2 },
+          { t: 'C) THIS IS A SIGN FROM THE UNIVERSE', p: 4 },
+          { t: 'D) RED FLAG. I NEEDED TO FEEL SPECIAL.', p: 5 },
+        ] },
+        { q: "SOMEONE HASN'T REPLIED IN 3 HOURS. YOU:", opts: [
+          { t: "A) ASSUME THEY'RE BUSY. NO BIG DEAL.", p: 0 },
+          { t: 'B) REREAD THE CONVERSATION 11 TIMES', p: 3 },
+          { t: 'C) WRITE AND DELETE 6 DIFFERENT MESSAGES', p: 4 },
+          { t: 'D) POST A VAGUE STORY AND WAIT', p: 5 },
+        ] },
+        { q: 'YOUR ACTUAL LOVE LANGUAGE IS:', opts: [
+          { t: 'A) WORDS OF AFFIRMATION (NORMAL)', p: 1 },
+          { t: 'B) PHYSICAL TOUCH', p: 2 },
+          { t: 'C) UNANNOUNCED EMOTIONAL VISITS', p: 4 },
+          { t: 'D) MAKING YOU FEEL BAD FOR NOT TEXTING FIRST', p: 5 },
+        ] },
+        { q: "HOW MANY PEOPLE ARE YOU 'TALKING TO' RN?", opts: [
+          { t: "A) NONE. I'M FOCUSED ON MYSELF.", p: 0 },
+          { t: 'B) 1-2. KEEPING IT VERY CHILL.', p: 2 },
+          { t: 'C) ENOUGH TO MAKE A BRACKET', p: 4 },
+          { t: 'D) I PLEAD THE FIFTH ON THIS ONE', p: 5 },
+        ] },
+      ],
+      // Score bands are fixed in engine.js: 0-5, 6-10, 11-15, 16-25
+      results: [
+        { title: '{NAME} SAYS: TOO PURE', desc: 'You scored dangerously low. {Name} is suspicious. Either you are lying or you have never lived. {They} will fix this. Consider this your orientation.' },
+        { title: '{NAME} SAYS: INTERESTING', desc: 'Messy but loveable. {Name} has seen this before and is intrigued. You have potential. {They} will be watching your story tonight.' },
+        { title: '{NAME} SAYS: RESPECT', desc: 'You have made at least 2 people post sad songs this year. {Name} recognizes this energy. {They} {is} already composing a text {they} will never send. You passed.' },
+        { title: '{NAME} SAYS: MARRY ME', desc: "LEGENDARY. You matched {Name}'s energy exactly. {They} {is} frightened and deeply attracted. This is either the beginning of something incredible or a disaster for everyone involved. Proceed." },
+      ],
+    },
+    excuse: {
+      tile: 'EXCUSE\nGENERATOR',
+      hud: 'EXCUSE ENGINE',
+      title: 'EXCUSE GENERATOR',
+      hint: 'WHAT DID THE {SIGN} DO?\nSELECT TO GENERATE CERTIFIED EXCUSE:',
+      cert: `CERTIFIED EXCUSE™ ${NB}|${NB} {SIGN} INTERNATIONAL DEFENSE FEDERATION\nEST. {BDAY} ${NB}|${NB} NOT RESPONSIBLE FOR CONSEQUENCES ${NB}|${NB} {SYMBOL}`,
+      another: `↻${NB} ANOTHER EXCUSE`,
+      crimes: [
+        { tile: 'I GHOSTED\nSOMEONE', label: 'CRIME: GHOSTING', list: [
+          '"Mercury was in retrograde and my emotional bandwidth was fully compromised. I am still in recovery and appreciate your patience."',
+          '"As {asign} I feel things very deeply. I felt too much and needed to retreat into my inner world for a period. This is not something I can apologize for."',
+          '"I went out on Tuesday and have not fully recovered. I am currently in my soup era. I make soup once every six months to heal and this is that week. Please respect the process."',
+          '"I had been awake for 38 hours on {fuel} and genuinely forgot other people existed. By the time I remembered, it had been too long and the shame was worse than the ghosting. This is actually your fault for not double-texting."',
+        ] },
+        { tile: 'SHOWED UP\n45 MINS LATE', label: 'CRIME: SHOWING UP 45 MINS LATE', list: [
+          '"I was getting ready and the outfit was not cooperating. I cannot show up looking less than incredible. This delay was an act of respect for you and everyone else in the venue."',
+          '"I was having a moment. You cannot rush a moment. I won\'t apologize for being present in my experience."',
+          '"I was still drunk from last night and had to sober up enough to seem like a functioning person. I think we can agree that showing up slightly late is better than showing up still swaying. You are welcome."',
+          '"Last night technically never ended. I went out at 10pm and came home at 6am and my body has been negotiating with reality ever since. The fact that I am here at all is heroic."',
+        ] },
+        { tile: 'TEXTED\nMY EX', label: 'CRIME: TEXTING THE EX', list: [
+          '"I still care about them. That is not a crime. I was checking in because I am a good person who happens to also be slightly drunk. The two things are not related."',
+          '"You don\'t get it. Nobody gets it. I have a lot of love to give and society is not built for people who feel this much. The text was a symptom of a bigger thing that I am not going to explain right now."',
+          '"I am a very emotional person and I am not ashamed of that. The song that was playing hit different and I acted on instinct. I would rather feel too much than feel nothing. You should be impressed."',
+          '"I was three {fuel}s deep at 2am and my thumbs moved faster than my brain. The message was sent before I could intervene. I am the victim here if you think about it."',
+        ] },
+        { tile: 'CRIED ON\nA DATE', label: 'CRIME: CRYING ON A DATE', list: [
+          '"My emotional depth is a gift. You should feel genuinely honored that I was present enough to share that with you on date one."',
+          '"As {asign} I feel everything on a cellular level. That was intimacy. Most people never get that from someone. You\'re welcome."',
+          '"I had not slept in two days and they said something really nice and my body just gave up. When you are that tired everything hits harder. The crying was involuntary. The feelings were real. I am not apologizing for either."',
+          '"I think it\'s beautiful when people are unafraid to feel things. I am that person. You got to meet that person tonight. That\'s rare."',
+        ] },
+        { tile: 'CANCELLED\nLAST MINUTE', label: 'CRIME: CANCELLING LAST MINUTE', list: [
+          '"I was in my feelings and my feelings required me to stay home and process. I protected our dynamic."',
+          '"As {aelement} sign I sometimes need to recharge in complete solitude. I was protecting both of us from a bad energy situation."',
+          '"My energy was off and I absolutely refuse to bring that into a good situation. I was doing this for you. You should be thanking me."',
+          '"I went out last night and my body has issued a formal complaint. I am currently horizontal and negotiating with my stomach. Going outside would be medically irresponsible. I am doing this for both of us."',
+        ] },
+        { tile: 'SAID I LOVE YOU\nON DATE 2', label: 'CRIME: I LOVE YOU ON DATE 2', list: [
+          '"{Sign} love is not bound by societal timelines. I felt it so I said it. That is called bravery."',
+          '"I am genuinely not like other people. I lead with my heart completely unfiltered. Most people never get this."',
+          '"The stars were literally aligned. Was I supposed to fight the cosmos? I don\'t think you\'re actually asking me to do that."',
+          '"I had been awake for {age} hours and they laughed at something I said and my brain just went offline. The words came out before any filter could engage. The sleep deprivation did not create the feeling. It just removed the delay."',
+        ] },
+      ],
+    },
+    drinks: {
+      tile: 'DRINKS ORACLE',
+      hud: 'DRINKS ORACLE',
+      title: 'DRINKS ORACLE',
+      hint: 'SELECT THE VIBE OF THE DATE.\nTHE ORACLE WILL PRESCRIBE.',
+      whoA: "{NAME}'S DRINK",
+      whoB: "DATE'S DRINK",
+      whoR2: 'ROUND 2',
+      reset: '↺ NEW VIBE',
+      vibes: [
+        { label: 'FIRST DATE\n(YOU ARE NERVOUS)',
+          a: { name: '{FUEL}', why: "The signature move. Ordered with the confidence of someone who has done this before. It says 'I know exactly who I am' and 'please do not ask follow-up questions' at the same time." },
+          b: { name: 'ALSO {FUEL}', why: 'They ordered the same. Neither of you planned this. You are now two people on a first date holding matching drinks like some kind of chaotic covenant. This is either a red flag or an origin story.' },
+          r2: { name: 'ONE MORE (SPLIT)', why: 'One of you said "should we get another one?" and the other said "obviously" without hesitation. You are sharing it on a park bench at 9pm. This is technically a date. It is also technically beautiful.' },
+          warn: 'Two people. Matching drinks. Maximum chaos energy. You will both be texting until 3am. This was always the plan.' },
+        { label: 'SITUATIONSHIP\n(STILL NOT OFFICIAL)',
+          a: { name: 'NEGRONI', why: '{Name} ordered this while maintaining strong eye contact. Bitter, sophisticated, will not explain itself. No one acknowledged the subtext.' },
+          b: { name: "WHATEVER {NAME}'S HAVING", why: 'You copied {them}. {They} noticed. {They} said nothing. It meant something to both of you and you will never discuss it.' },
+          r2: { name: 'ONE MORE NEGRONI', why: 'Technically a mistake. Emotionally correct.' },
+          warn: 'By round 2 someone will say something they cannot take back. The other person will pretend not to have heard it. Both know.' },
+        { label: 'REVENGE DATE\n(YOU LOOK INCREDIBLE)',
+          a: { name: 'MARTINI (DIRTY)', why: "Ordered loudly. This drink is a statement. {Name} is the statement. The ex is somewhere in the same city thinking about this for reasons they can't explain." },
+          b: { name: 'CHAMPAGNE', why: 'You are celebrating something. You will not say what. Everyone knows what.' },
+          r2: { name: 'TEQUILA. STRAIGHT.', why: 'It is that kind of evening and everyone at the bar can tell.' },
+          warn: 'Photo quality tonight is statistically 34% higher than average. This is not a coincidence.' },
+        { label: "SOFT LAUNCH\n(THEY'RE MEETING YOUR FRIENDS)",
+          a: { name: 'BEER (CRAFT, OBSCURE)', why: '{Name} ordered something no one has heard of. This was deliberate. The date is now trying to look interested in the brewery. {Name} watches.' },
+          b: { name: 'WHAT EVERYONE ELSE IS HAVING', why: 'Good social instinct. {Name} appreciated this more than {they} said. {They} told one friend later.' },
+          r2: { name: 'SHOTS BOUGHT BY {NAME}', why: 'Announced with the energy of someone hosting a party they did not plan. The group accepted.' },
+          warn: 'The friends will vote later. The vote is already happening. It has been happening since they walked in.' },
+        { label: 'DATE IS GOING\nBADLY',
+          a: { name: 'LARGE WINE', why: 'Ordered without looking at the menu. This is a tactical drink. {Name} is buying time and processing a lot of information at once.' },
+          b: { name: 'ALSO LARGE WINE', why: 'They also know. You are now two people drinking large wines and discussing something neutral with the effort of professional actors.' },
+          r2: { name: 'THE BILL', why: 'Requested gently but immediately. Cited an early morning. There is no early morning.' },
+          warn: 'A polite goodbye hug is incoming. It will be 1.5 seconds long. Both parties will feel relief.' },
+        { label: 'DATE IS GOING\nTERRIFYINGLY WELL',
+          a: { name: 'WHATEVER WAS SUGGESTED', why: '{Name} said yes immediately. This is how you know. {Name} does not say yes to things immediately. The date has no idea what this means. You do.' },
+          b: { name: 'SOMETHING THEY LOVE', why: 'They talked about it for 4 minutes. {Name} listened to all 4 minutes. {They} remembered. {They} will mention it on date 3 and the date will be undone.' },
+          r2: { name: 'ONE MORE. THEN ONE MORE.', why: 'The bar is closing. They ordered another round. No one looked at the time after that.' },
+          warn: 'Projected outcome: someone does not go home tonight. 2am texts to separate group chats: confirmed. A new era begins.' },
+      ],
+    },
+  };
+
+  // ---------------------------------------------------------------- LIFE CHAOS
+  const life = {
+    id: 'life',
+    label: 'Life chaos',
+    blurb: 'Same four games, no dating. Friendship diagnostics, a chaos quiz, excuses for everyday crimes, drinks for any occasion. Safe for family and coworkers.',
+    title: {
+      badge: `⚠${NB} CAUTION ${NB}⚠`,
+      headline: '{SIGN}\nENCLOSED',
+      sheetHead: 'PRODUCT DATA SHEET',
+      sheet: [
+        { k: 'SUBJECT',      v: '{NAME} ({AGE} YRS OLD)' },
+        { k: 'ORIGIN',       v: '{ORIGIN}' },
+        { k: 'SUN SIGN',     v: '{SIGN} {SYMBOL} ({THEY} KNOW{S})' },
+        { k: 'FUEL SOURCE',  v: '{FUEL}' },
+        { k: 'CHAOS LEVEL',  v: 'CANNOT COMPUTE' },
+        { k: 'HOUSE-TRAINED', v: 'MOSTLY' },
+      ],
+      alerts: [
+        'KEEP AWAY FROM: UNREAD GROUP CHATS',
+        'MAY CAUSE: SPONTANEOUS {FOOD} CRAVINGS',
+        'SIDE EFFECT: 47 OPEN BROWSER TABS',
+        'NOT RESPONSIBLE FOR: VOICE NOTES OVER 4 MINS',
+        'NOTE: POWERED BY {FUEL}',
+      ],
+      start: `▶${NB} PRESS START`,
+      footer: `HAPPY {AGETH} {NAME} {SYMBOL} ${NB}•${NB} {SIGN} CHAOS LABS © {YEAR}`,
+    },
+    dash: {
+      hud: 'WORLD {SYMBOL}-1',
+      head: "★ {NAME}'S CHAOS DASHBOARD ★",
+      sub: 'CHOOSE YOUR DESTINY, PLAYER 2',
+      intro: 'CONGRATULATIONS.\nYOU HAVE FOUND {ASIGN}.\n{TOOLS} BETWEEN\nYOU AND TOTAL CHAOS.',
+      footer: "MADE FOR {NAME} ON THE OCCASION OF SURVIVING {AGE} YEARS\nAS {ASIGN} {SYMBOL} IN A WORLD THAT WASN'T READY",
+      from: 'WITH LOVE (AND CONCERN) FROM {FROM}',
+    },
+    compat: {
+      tile: 'FRIEND\nDIAGNOS-\nTICS',
+      hud: 'COMPAT-O-METER',
+      title: 'FRIEND DIAGNOSTICS',
+      hint: 'DESCRIBE YOURSELF.\n{NAME} WILL DIAGNOSE THE FRIENDSHIP.',
+      diagnose: '⚕ DIAGNOSE',
+      reportHead: '▼ FIELD REPORT ▼',
+      scoreLabel: 'CHAOS UNITS / 20',
+      cert: 'ISSUED BY: {NAME} CHAOS RESEARCH INSTITUTE {SYMBOL}\nDISCLAIMER: THIS REPORT IS BINDING. NO REFUNDS.',
+      reset: '↺ NEW FRIEND',
+      traits: [
+        { label: 'FOOD', opts: [
+          { t: 'EATS ANYTHING', score: 1, tag: 'COMPATIBLE', verdict: '{Name} will share {their} {food} with you, an honour granted to roughly four people in history. Treasure this.' },
+          { t: 'FORGETS TO EAT', score: 2, tag: 'ADOPTED', verdict: '{Name} will start bringing you snacks. You did not ask for this. You are now in a care relationship. Congratulations.' },
+          { t: 'ONLY EATS BEIGE FOOD', score: 3, tag: 'RED FLAG', verdict: 'No textures, no feelings. {Name} requires both. {They} will find this deeply suspicious and not know why.' },
+          { t: 'PICKY EATER', score: 4, tag: 'MILD TURBULENCE', verdict: '{Name} will take you to {their} favourite place and you will order plain toast. {They} will not recover. {They} will mention it at your wedding.' },
+          { t: 'STEALS FOOD OFF PLATES', score: 5, tag: 'UNDER SURVEILLANCE', verdict: 'Bold. {Name} saw that. {Name} will always see that. Every fry is being counted from now on.' },
+        ] },
+        { label: 'WEEKENDS', opts: [
+          { t: 'OUT EVERY NIGHT', score: 1, tag: 'DANGER ZONE', verdict: "Natural habitat match. You will both say 'just one drink' every time. You will never mean it. There will be stories." },
+          { t: 'MIX OF BOTH', score: 2, tag: 'SUSPICIOUSLY BALANCED', verdict: '{Name} can work with this. The quiet nights will quietly become the best nights. Watch yourself.' },
+          { t: 'HOMEBODY', score: 3, tag: '{NAME} WINS', verdict: '{Name} will try to drag you out. {They} will succeed twice. Then guilt-invite you to something. You will go. You will enjoy it. {They} win{s}.' },
+          { t: 'PLANS 6 WEEKS AHEAD', score: 4, tag: 'SCHEDULING FRICTION', verdict: '{Name} decides what to do about 40 minutes before doing it. Your shared calendar will become a crime scene.' },
+          { t: 'NEVER LEAVES THE HOUSE', score: 5, tag: 'INCOMPATIBLE', verdict: 'Incompatible ecosystems. {Name} needs to be out in the world the way plants need sunlight. You are a houseplant. A lovely one. Indoors.' },
+        ] },
+        { label: 'TEXTING STYLE', opts: [
+          { t: 'VOICE NOTES ONLY', score: 3, tag: 'CHAOS TIER: HIGH', verdict: '{Name} will listen to all 14 of them. At 2am. In bed. {They} will not be okay about it. {They} will send 3 back.' },
+          { t: 'ONE WORD REPLIES', score: 4, tag: '{NAME} SPIRALS', verdict: '"k" will be analyzed for 72 hours. A dissertation will be written in {their} notes app. You will never know about it.' },
+          { t: 'ESSAY LENGTH MESSAGES', score: 2, tag: 'RECOGNIZED', verdict: 'Kindred spirit detected. {Name} also sends essays. You will both be way too much for each other. This is correct.' },
+          { t: 'LEAVES ON READ', score: 5, tag: 'DECLARE WAR', verdict: 'This is war. {Name} will not say anything. {Name} will absolutely say something. Via story. Via mutual friend. Via vibe.' },
+          { t: 'DOUBLE / TRIPLE TEXTS', score: 1, tag: 'COMPATIBLE CHAOS', verdict: 'Seen. Understood. Respected. {Name} has been doing this for years. You will flood each other daily. No one will ever complain.' },
+        ] },
+        { label: 'MEME TASTE', opts: [
+          { t: 'ASTROLOGY MEMES', score: 2, tag: 'BONDING HAZARD', verdict: '{Name} speaks this language fluently. You bonded in the first 8 minutes. The group chat will never recover. Do not look directly at {them}.' },
+          { t: 'DARK HUMOR ONLY', score: 3, tag: 'DELAYED REACTION', verdict: '{Name} will laugh genuinely and then feel something about it 4 hours later. {They} will not explain why.' },
+          { t: 'MOTIVATIONAL QUOTES', score: 4, tag: 'MISALIGNMENT', verdict: '{Name} needs chaos, not affirmations. {They} will be very polite about this. {They} will also never send you a meme first.' },
+          { t: 'CHAOTIC TIKTOK REPOSTS', score: 1, tag: 'COMPATIBLE', verdict: 'Compatible energy. {Name} will send you 6 immediately. Your phone will never return to its previous state. Welcome.' },
+          { t: 'NO MEMES / TEXTING IS SERIOUS', score: 5, tag: 'INCOMPATIBLE', verdict: '{Name} communicates primarily in memes. This is not a preference. It is a language. You do not speak it.' },
+        ] },
+      ],
+      diagnoses: [
+        { title: 'STABLE CHAOS', prognosis: 'Against all odds, this works. {Name} will still make it weird eventually but the baseline is surprisingly functional. Proceed with snacks and approximately 3 backup plans.' },
+        { title: 'CLINICALLY UNHINGED', prognosis: 'Real chemistry, real carnage. {Name} is intrigued, which is the most dangerous state for everyone involved. Someone is getting a 2am voice note within the week.' },
+        { title: 'HIGH CHAOS DETECTED', prognosis: 'The red flags are technically pink from this angle. {Name} finds this interesting, which is the problem. Projected outcome: a lifelong friendship and at least one story that can never be told at a family dinner.' },
+        { title: 'DO NOT PROCEED', prognosis: 'Medical recommendation: do not proceed. Emotional recommendation: {Name} will absolutely proceed. {They} will say Mercury made {them} do it. You are now best friends. It is binding.' },
+      ],
+    },
+    quiz: {
+      tile: 'CHAOS\nQUIZ',
+      hud: 'CHAOS-O-METER',
+      title: 'CHAOS QUIZ',
+      scoreLabel: 'CHAOS POINTS',
+      again: `↺${NB} PLAY AGAIN`,
+      questions: [
+        { q: 'YOUR ALARM GOES OFF. YOU:', opts: [
+          { t: 'A) GET UP. LIKE AN ADULT.', p: 0 },
+          { t: 'B) SNOOZE ONCE. RESPONSIBLY.', p: 2 },
+          { t: "C) SNOOZE UNTIL IT'S A DIFFERENT DAY", p: 4 },
+          { t: 'D) WHAT ALARM', p: 5 },
+        ] },
+        { q: 'THE GROUP CHAT HAS 214 UNREAD MESSAGES. YOU:', opts: [
+          { t: 'A) READ ALL OF THEM', p: 1 },
+          { t: 'B) SCROLL TO THE TOP. GIVE UP.', p: 2 },
+          { t: "C) REPLY 'LOL' TO SOMETHING FROM 3 DAYS AGO", p: 4 },
+          { t: 'D) MUTE IT. FOREVER.', p: 5 },
+        ] },
+        { q: 'SOMEONE SUGGESTS A PLAN FOR SATURDAY. YOU:', opts: [
+          { t: 'A) PUT IT IN THE CALENDAR', p: 0 },
+          { t: "B) SAY 'MAYBE!' AND MEAN IT", p: 2 },
+          { t: "C) SAY 'YES!!' AND CANCEL ON FRIDAY", p: 4 },
+          { t: 'D) SHOW UP TO A DIFFERENT PLAN', p: 5 },
+        ] },
+        { q: 'YOUR FRIDGE CURRENTLY CONTAINS:', opts: [
+          { t: 'A) A BALANCED WEEK OF MEALS', p: 0 },
+          { t: 'B) SAUCES. JUST SAUCES.', p: 3 },
+          { t: 'C) ONE LEMON OF UNKNOWN AGE', p: 4 },
+          { t: 'D) LEFTOVER {FOOD}. THAT IS ALL.', p: 5 },
+        ] },
+        { q: 'HOW MANY BROWSER TABS DO YOU HAVE OPEN?', opts: [
+          { t: 'A) 3. I CLOSE THINGS.', p: 0 },
+          { t: 'B) 12. MANAGEABLE.', p: 2 },
+          { t: 'C) ENOUGH TO SLOW THE LAPTOP', p: 4 },
+          { t: 'D) SOME ARE FROM LAST YEAR', p: 5 },
+        ] },
+      ],
+      results: [
+        { title: '{NAME} SAYS: TOO PURE', desc: 'You scored dangerously low. {Name} is suspicious. Either you are lying or you have never lived. {They} will fix this. Consider this your orientation.' },
+        { title: '{NAME} SAYS: INTERESTING', desc: 'Messy but loveable. {Name} has seen this before and is intrigued. You have potential. {They} will be watching.' },
+        { title: '{NAME} SAYS: RESPECT', desc: "You are a functioning disaster. {Name} recognizes this energy because {theyre} exactly the same. You passed." },
+        { title: '{NAME} SAYS: SOULMATE', desc: "LEGENDARY. You matched {Name}'s energy exactly. {They} {is} frightened and deeply impressed. Please never live together." },
+      ],
+    },
+    excuse: {
+      tile: 'EXCUSE\nGENERATOR',
+      hud: 'EXCUSE ENGINE',
+      title: 'EXCUSE GENERATOR',
+      hint: 'WHAT DID THE {SIGN} DO?\nSELECT TO GENERATE CERTIFIED EXCUSE:',
+      cert: `CERTIFIED EXCUSE™ ${NB}|${NB} {SIGN} INTERNATIONAL DEFENSE FEDERATION\nEST. {BDAY} ${NB}|${NB} NOT RESPONSIBLE FOR CONSEQUENCES ${NB}|${NB} {SYMBOL}`,
+      another: `↻${NB} ANOTHER EXCUSE`,
+      crimes: [
+        { tile: 'SHOWED UP\n45 MINS LATE', label: 'CRIME: SHOWING UP 45 MINS LATE', list: [
+          '"I was getting ready and the outfit was not cooperating. I cannot show up looking less than incredible. This delay was an act of respect for you."',
+          '"I was having a moment. You cannot rush a moment. I won\'t apologize for being present in my experience."',
+          '"Time is a construct and I am {asign}. We operate on a different system. You would not understand the paperwork."',
+          '"I stopped to get {fuel}. Arriving without {fuel} would have been worse for everyone. I was protecting the group."',
+        ] },
+        { tile: 'LEFT YOU\nON READ', label: 'CRIME: LEAVING YOU ON READ', list: [
+          '"I read it, I loved it, I wrote a beautiful reply in my head, and then I believed I had sent it. Spiritually, I replied."',
+          '"Your message deserved a proper response and I was waiting until I had the emotional bandwidth to give it one. That was eleven days ago. I am still preparing."',
+          '"As {asign} I feel things very deeply. I felt your message too much and needed to retreat into my inner world for a period."',
+          '"My phone was on 2% for four days. I saved that battery for emergencies. Your meme was not an emergency. It was, however, very funny."',
+        ] },
+        { tile: 'CANCELLED\nLAST MINUTE', label: 'CRIME: CANCELLING LAST MINUTE', list: [
+          '"I was in my feelings and my feelings required me to stay home and process. I protected our dynamic."',
+          '"As {aelement} sign I sometimes need to recharge in complete solitude. I was protecting both of us from a bad energy situation."',
+          '"My energy was off and I absolutely refuse to bring that into a good situation. I was doing this for you. You should be thanking me."',
+          '"I sat down for one second and the sofa claimed me. It was not a decision. It was a hostage situation."',
+        ] },
+        { tile: 'ATE THE\nLAST SLICE', label: 'CRIME: EATING THE LAST SLICE', list: [
+          '"It was looking at me. You were not there. I made a judgement call under pressure and I stand by it."',
+          '"Technically I saved you from it. You were going to regret it. I took that regret on myself. That is called sacrifice."',
+          '"I genuinely thought it was mine. Then I ate it. Then I remembered. The order of events was unfortunate."',
+          '"I was going through a {food} withdrawal and it was the closest thing available. Please take this up with my doctor."',
+        ] },
+        { tile: 'FORGOT YOUR\nBIRTHDAY', label: 'CRIME: FORGETTING YOUR BIRTHDAY', list: [
+          '"I did not forget. I was celebrating you privately, in my heart, all day. Public celebration is for people who doubt their love."',
+          '"I wanted to wish you happy birthday at exactly the right moment and the right moment simply never arrived. That is on the universe."',
+          '"Birthdays are a social construct. I celebrate you every day. Today just happened to be one of the quieter days."',
+          '"I wrote you a whole message. It is still in my drafts. Drafts count. Ask any lawyer."',
+        ] },
+        { tile: 'STARTED ANOTHER\nHOBBY', label: 'CRIME: STARTING A NEW HOBBY (AGAIN)', list: [
+          '"This one is different. I can feel it. The previous eleven hobbies were research for this one."',
+          '"The equipment was on sale. Not buying it would have been financially irresponsible."',
+          '"I am not a quitter. I am a collector of beginnings. There is a difference and it is spiritual."',
+          '"As {asign} I contain multitudes. Each multitude needs its own starter kit."',
+        ] },
+      ],
+    },
+    drinks: {
+      tile: 'DRINKS ORACLE',
+      hud: 'DRINKS ORACLE',
+      title: 'DRINKS ORACLE',
+      hint: 'SELECT THE VIBE OF THE OCCASION.\nTHE ORACLE WILL PRESCRIBE.',
+      whoA: "{NAME}'S DRINK",
+      whoB: 'YOUR DRINK',
+      whoR2: 'ROUND 2',
+      reset: '↺ NEW VIBE',
+      vibes: [
+        { label: "BIRTHDAY DINNER\n(IT'S {THEIR} NIGHT)",
+          a: { name: '{FUEL}', why: "The signature order. Requested with the confidence of someone who has done this many times. It says 'I know exactly who I am' and 'please do not ask follow-up questions' at the same time." },
+          b: { name: 'WHATEVER {NAME} ORDERS', why: 'You copied {them}. {They} noticed. {They} pretended not to. It was the highlight of {their} evening.' },
+          r2: { name: 'SOMETHING WITH A SPARKLER', why: 'Someone tipped off the staff. {Name} will act surprised. {They} knew. {They} always know{s}.' },
+          warn: 'The birthday song will be sung by people who do not know the words. {Name} will film all of it.' },
+        { label: 'FAMILY LUNCH\n(BEST BEHAVIOUR)',
+          a: { name: 'SPARKLING WATER', why: 'Hydrated. Composed. A model citizen. {Name} is performing "responsible adult" and it is going surprisingly well.' },
+          b: { name: 'ORANGE JUICE', why: 'Safe. Wholesome. Your cover story is holding.' },
+          r2: { name: 'A SECOND DESSERT', why: 'Not a drink. Nobody is checking. The family has bigger questions.' },
+          warn: 'Someone will bring up an embarrassing story from 2009. {Name} will laugh. {They} will remember who started it.' },
+        { label: 'BIG NIGHT OUT\n(NO PLANS TO GO HOME)',
+          a: { name: 'TEQUILA. STRAIGHT.', why: 'It is that kind of evening and everyone at the bar can tell.' },
+          b: { name: 'WHATEVER IS ON OFFER', why: "You said 'just one'. The oracle heard you. The oracle does not believe you." },
+          r2: { name: '{FOOD} AT 2AM', why: 'Not a drink. A tradition. The night is not over until this has happened.' },
+          warn: 'Group chat photo quality tonight: 34% higher than average. Group chat photo regret tomorrow: also 34%.' },
+        { label: 'SLOW SUNDAY\n(NOTHING MATTERS)',
+          a: { name: '{FUEL}, LARGE', why: '{Name} has not changed out of {their} pyjamas and is at peace. Nobody should disturb this.' },
+          b: { name: 'TEA (THIRD POT)', why: "You both said you'd go for a walk. You both know you won't." },
+          r2: { name: 'HOT CHOCOLATE', why: 'Upgraded at 4pm. Nobody saw it coming. Everybody needed it.' },
+          warn: 'Plans for the day have been downgraded twice. A nap is now mandatory.' },
+        { label: 'BAD DAY\n(DO NOT ASK)',
+          a: { name: 'LARGE WINE (OR LARGE TEA)', why: 'Ordered without looking at the menu. A tactical drink. {Name} is processing a lot of information at once.' },
+          b: { name: 'THE SAME, IN SOLIDARITY', why: 'You did not ask what happened. You just ordered the same. This is what friendship is.' },
+          r2: { name: '{FOOD}', why: 'Delivered. Eaten in silence. Things are improving.' },
+          warn: "Do not mention the thing. {Name} will bring up the thing when {theyre} ready. Probably at 1am." },
+        { label: 'CELEBRATION\n(SOMETHING WENT RIGHT)',
+          a: { name: 'CHAMPAGNE', why: '{Name} is celebrating something. {They} will not stop talking about it. You will let {them}.' },
+          b: { name: 'ALSO CHAMPAGNE', why: 'Obviously. You are not letting {them} drink alone at a time like this.' },
+          r2: { name: 'ONE MORE. THEN ONE MORE.', why: 'The place is closing. Another round was ordered. Nobody looked at the time after that.' },
+          warn: 'A speech is coming. It will be emotional. It will be 11 minutes long. Clap at the end.' },
+      ],
+    },
+  };
+
+  window.ROAST_SIGNS = SIGNS;
+  window.ROAST_PRONOUNS = PRONOUNS;
+  window.ROAST_PACKS = { dating, life };
+})();
