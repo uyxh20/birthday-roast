@@ -97,10 +97,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 /* ---------- pack cards ---------- */
 .packs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .pack {
-  border: 3px solid var(--panel-border); background: var(--dark); padding: 14px; cursor: pointer;
+  position: relative; border: 3px solid var(--panel-border); background: var(--dark); padding: 14px; cursor: pointer;
   display: flex; flex-direction: column; gap: 8px; margin: 0; color: var(--text);
 }
-.pack input { position: absolute; opacity: 0; pointer-events: none; }
+/* Visually hidden but focusable. Width must be reset: the global input rule's 100% made the page scroll sideways. */
+.pack input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .pack b { font-family: var(--pixel); font-size: 10px; color: var(--yellow); line-height: 1.6; font-weight: normal; }
 .pack span { font-size: 19px; color: var(--dim); }
 .pack:has(input:checked) { border-color: var(--yellow); background: #221446; }
