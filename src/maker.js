@@ -150,7 +150,16 @@
       : `<input data-path="${esc(path)}" maxlength="600" value="${esc(val)}">`;
     return `<div class="line${changed ? ' changed' : ''}">
       <div class="k"><span>${esc(label)}</span><button type="button" class="undo" data-undo="${esc(path)}"${changed ? '' : ' hidden'}>undo</button></div>
-      ${input}</div>`;
+      ${input}<div class="resolved" data-resolved="${esc(path)}"></div></div>`;
+  }
+
+  // Under any line that uses {tags}, show what it will actually say, so nobody has to decode the tags.
+  function refreshResolved() {
+    const ctx = buildCtx(normalize(cfg));
+    document.querySelectorAll('[data-resolved]').forEach(el => {
+      const input = el.previousElementSibling;
+      el.textContent = /\{[A-Za-z]+\}/.test(input.value) ? '→ ' + fill(input.value, ctx).replace(/\n/g, ' ') : '';
+    });
   }
 
   // Section 5: the warning label values and alerts, the most personal lines on the card.
@@ -185,6 +194,7 @@
         box.innerHTML = leaves(P[det.dataset.group], det.dataset.group, [])
           .filter(p => !skip.test(p))
           .map(p => lineRow(p, humanize(p), true)).join('');
+        refreshResolved();
       });
     });
   }
@@ -206,6 +216,7 @@
   let previewTimer, linkTimer;
   function changed() {
     saveDraft();
+    refreshResolved();
     clearTimeout(previewTimer);
     previewTimer = setTimeout(sendPreview, 120);
     clearTimeout(linkTimer);
